@@ -1,0 +1,8 @@
+/code
+
+/.vscode
+
+.DS_Store
+
+# docker individual settings
+.env.local

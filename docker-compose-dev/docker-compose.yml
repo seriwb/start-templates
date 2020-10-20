@@ -1,0 +1,116 @@
+version: '3.7'
+services:
+  # --------------------- Original Applications ---------------------
+  app_name-web:
+    build:
+      context: ./code/app_name-web
+    image: app_name/app_name-web
+    container_name: app_name_app_name-web
+    command: /bin/bash
+    tty: true
+    working_dir: "/app_name/app_name-web"
+    volumes:
+      - ./code/app_name-web:/app_name/app_name-web:cached
+    ports:
+      - "3000:3000"
+    networks:
+      - app_name-network
+    # depends_on:
+    #   - redis
+
+  app_name-api:
+    build:
+      context: ./code/app_name-api
+    image: app_name/app_name-api
+    container_name: app_name_app_name-api
+    command: /bin/bash
+    tty: true
+    working_dir: "/app_name/app_name-api"
+    # env_file:
+    #   - ./code/app_name-api/.envs/.local/.app
+    volumes:
+      - ./code/app_name-api:/app_name/app_name-api:cached
+    ports:
+      - "5000:5000"
+    networks:
+      - app_name-network
+    # depends_on:
+    #   - mysql
+
+  # --------------------- Local Infrastractures ---------------------
+  mysql:
+    image: mysql:5.7
+    container_name: app_name_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_USER: "admin"
+      MYSQL_PASSWORD: "admin"
+    volumes:
+      - ./infra/mysql/sql:/docker-entrypoint-initdb.d:cached
+      - ./infra/mysql/conf.d:/etc/mysql/conf.d:cached
+      - mysql-db-volume:/var/lib/mysql
+      - mysql-log-volume:/var/log/mysql
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    networks:
+      - app_name-network
+
+  redis:
+    image: redis:5.0.6
+    container_name: app_name_redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./infra/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf:cached
+      - redis-volume:/data
+    networks:
+      - app_name-network
+
+  mongo:
+    image: mongo:3.6
+    container_name: miyamori_mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-db-volume:/data/db
+      - mongo-configdb-volume:/data/configdb
+    networks:
+      - app_name-network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: miyamori_mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo_password
+    networks:
+      - app_name-network
+    depends_on:
+      - mongo
+
+
+networks:
+  app_name-network:
+
+volumes:
+  mysql-db-volume:
+    external: false
+  mysql-log-volume:
+    external: false
+
+  redis-volume:
+    external: false
+
+  mongo-db-volume:
+    external: false
+  mongo-configdb-volume:
+    external: false
